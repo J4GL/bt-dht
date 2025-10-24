@@ -99,6 +99,11 @@ class DHTClient:
         self.discovered_info_hashes: Dict[bytes, Dict] = {}
         self.info_hash_callback: Optional[Callable] = None
 
+        # BEP 51: DHT Infohash Indexing (enabled by default)
+        self.enable_bep51 = True
+        self.bep51_samples_received = 0
+        self.bep51_samples_sent = 0
+
     def start(self):
         """
         Start the DHT client.
@@ -404,6 +409,9 @@ class DHTClient:
             if message[b'y'] == b'r':
                 transaction_id = message[b't']
 
+                # BEP 51: Process samples from responses
+                self._process_bep51_samples(message, addr)
+
                 with self.pending_lock:
                     if transaction_id in self.pending_queries:
                         query_type, callback, timestamp = self.pending_queries.pop(transaction_id)
@@ -415,6 +423,41 @@ class DHTClient:
 
         except (ValueError, KeyError) as e:
             # Ignore malformed messages
+            pass
+
+    def _process_bep51_samples(self, message: Dict, addr: Tuple[str, int]):
+        """Process BEP 51 samples from a response message."""
+        if not self.enable_bep51:
+            return
+
+        try:
+            from protocol import unpack_samples
+
+            # Check if response contains samples
+            if b'r' in message and b'samples' in message[b'r']:
+                samples_data = message[b'r'][b'samples']
+
+                # Unpack samples
+                samples = unpack_samples(samples_data)
+
+                # Add each sample to discovered_info_hashes
+                for info_hash in samples:
+                    if info_hash not in self.discovered_info_hashes:
+                        self.discovered_info_hashes[info_hash] = {
+                            'first_seen': time.time(),
+                            'peer_count': 0,
+                            'sources': [addr[0]],
+                            'bep51_sample': True  # Mark as BEP 51 discovery
+                        }
+
+                        # Call callback if registered
+                        if self.info_hash_callback:
+                            self.info_hash_callback(info_hash, addr)
+
+                        self.bep51_samples_received += 1
+
+        except (ValueError, KeyError, TypeError):
+            # Ignore malformed samples
             pass
 
     def _handle_query(self, message: Dict, addr: Tuple[str, int]):
@@ -472,9 +515,9 @@ class DHTClient:
             pass
 
     def _send_find_node_response(self, transaction_id: bytes, target: bytes, addr: Tuple[str, int]):
-        """Send find_node response with closest nodes."""
+        """Send find_node response with closest nodes (and optional BEP 51 samples)."""
         from bencode import encode
-        from protocol import pack_nodes
+        from protocol import pack_nodes, pack_samples
 
         # Get closest nodes from routing table
         closest = self.routing_table.get_closest_nodes(target, count=8)
@@ -488,15 +531,27 @@ class DHTClient:
                 b'nodes': nodes_data
             }
         }
+
+        # BEP 51: Include samples if we have discovered info_hashes
+        if self.enable_bep51 and self.discovered_info_hashes:
+            # Get up to 20 random samples
+            all_hashes = list(self.discovered_info_hashes.keys())
+            sample_hashes = random.sample(all_hashes, min(20, len(all_hashes)))
+            samples_data = pack_samples(sample_hashes)
+
+            if samples_data:
+                response[b'r'][b'samples'] = samples_data
+                self.bep51_samples_sent += len(sample_hashes)
+
         try:
             self.socket.sendto(encode(response), addr)
         except:
             pass
 
     def _send_get_peers_response(self, transaction_id: bytes, addr: Tuple[str, int]):
-        """Send get_peers response (with nodes, not peers)."""
+        """Send get_peers response (with nodes, not peers, and optional BEP 51 samples)."""
         from bencode import encode
-        from protocol import pack_nodes
+        from protocol import pack_nodes, pack_samples
 
         # We don't have peers, send nodes instead
         closest = list(self.routing_table.get_closest_nodes(self.node_id, count=8))
@@ -511,6 +566,18 @@ class DHTClient:
                 b'nodes': nodes_data
             }
         }
+
+        # BEP 51: Include samples if we have discovered info_hashes
+        if self.enable_bep51 and self.discovered_info_hashes:
+            # Get up to 20 random samples
+            all_hashes = list(self.discovered_info_hashes.keys())
+            sample_hashes = random.sample(all_hashes, min(20, len(all_hashes)))
+            samples_data = pack_samples(sample_hashes)
+
+            if samples_data:
+                response[b'r'][b'samples'] = samples_data
+                self.bep51_samples_sent += len(sample_hashes)
+
         try:
             self.socket.sendto(encode(response), addr)
         except:

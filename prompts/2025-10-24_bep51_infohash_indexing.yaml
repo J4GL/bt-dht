@@ -1,0 +1,39 @@
+original_prompt: "add support for bittorent BEP 51 in CRAWLER mode"
+
+optimized_prompt: |
+  Implement BitTorrent BEP 51 (DHT Infohash Indexing) support in CRAWLER mode.
+
+  BEP 51 Overview:
+  - Allows DHT nodes to advertise they're indexing info_hashes
+  - Nodes include "samples" field in find_node/get_peers responses
+  - "samples" contains random sample of info_hashes (compact format: 20 bytes each)
+  - Helps crawlers discover info_hashes more efficiently
+
+  Requirements:
+  1. Add "samples" field to find_node and get_peers responses when in crawler mode
+  2. Sample from discovered_info_hashes dictionary (send up to 20 random samples)
+  3. Parse incoming "samples" field from other nodes' responses
+  4. Add discovered samples to info_hash collection
+  5. Add --enable-bep51 flag to enable/disable BEP 51 mode
+  6. Track BEP 51 discoveries separately in statistics
+
+  Implementation:
+  - Modify src/protocol.py to create responses with "samples" field
+  - Modify src/dht_client.py to parse and process "samples"
+  - Add unit tests for sample encoding/decoding
+  - Add E2E test for BEP 51 mode
+  - Update help text and documentation
+
+  Security:
+  - Validate samples field is proper length (multiple of 20 bytes)
+  - Limit sample size to prevent memory exhaustion
+  - Handle missing/malformed samples gracefully
+
+  Testing (TDD):
+  - Write tests for sample packing/unpacking
+  - Test sample parsing from responses
+  - Test sample inclusion in responses
+  - Test validation and error handling
+
+date: 2025-10-24
+context: "BitTorrent DHT Scraper - BEP 51 Infohash Indexing implementation"

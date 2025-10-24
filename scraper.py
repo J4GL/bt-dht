@@ -293,6 +293,15 @@ Note: Use --timeout 0 for infinite crawling. Press Ctrl+C to stop.
             print("=" * 60)
             print(f"Crawl completed in {elapsed:.1f}s")
             print(f"Discovered {len(results)} unique info_hash(es)")
+
+            # BEP 51 statistics
+            bep51_discoveries = sum(1 for h in results.values() if h.get('bep51_sample', False))
+            if bep51_discoveries > 0 or client.bep51_samples_sent > 0:
+                print(f"\nBEP 51 (DHT Infohash Indexing):")
+                print(f"  - Samples received: {client.bep51_samples_received}")
+                print(f"  - Samples sent: {client.bep51_samples_sent}")
+                print(f"  - Discoveries via BEP 51: {bep51_discoveries}")
+
             print("=" * 60)
 
             if results:

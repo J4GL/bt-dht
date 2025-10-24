@@ -383,6 +383,137 @@ class TestParseMessage(unittest.TestCase):
             parse_message('not bytes')
 
 
+class TestPackSamples(unittest.TestCase):
+    """Test cases for pack_samples function (BEP 51)."""
+
+    def test_pack_samples_empty(self):
+        """Test packing empty list returns empty bytes."""
+        from protocol import pack_samples
+
+        result = pack_samples([])
+        self.assertEqual(result, b'')
+        self.assertIsInstance(result, bytes)
+
+    def test_pack_samples_single(self):
+        """Test packing single info_hash."""
+        from protocol import pack_samples
+
+        info_hash = b'A' * 20
+        result = pack_samples([info_hash])
+
+        self.assertEqual(len(result), 20)
+        self.assertEqual(result, info_hash)
+
+    def test_pack_samples_multiple(self):
+        """Test packing multiple info_hashes."""
+        from protocol import pack_samples
+
+        hash1 = b'A' * 20
+        hash2 = b'B' * 20
+        hash3 = b'C' * 20
+
+        result = pack_samples([hash1, hash2, hash3])
+
+        self.assertEqual(len(result), 60)
+        self.assertEqual(result, hash1 + hash2 + hash3)
+
+    def test_pack_samples_max_limit(self):
+        """Test that packing respects max 20 sample limit."""
+        from protocol import pack_samples
+
+        # Create 25 different hashes
+        hashes = [bytes([i] * 20) for i in range(25)]
+
+        result = pack_samples(hashes)
+
+        # Should only pack first 20
+        self.assertEqual(len(result), 20 * 20)  # 400 bytes
+
+    def test_pack_samples_invalid_length(self):
+        """Test that invalid info_hash length raises ValueError."""
+        from protocol import pack_samples
+
+        invalid_hash = b'short'
+
+        with self.assertRaises(ValueError) as ctx:
+            pack_samples([invalid_hash])
+        self.assertIn("20 bytes", str(ctx.exception))
+
+    def test_pack_samples_invalid_type(self):
+        """Test that non-bytes info_hash raises TypeError."""
+        from protocol import pack_samples
+
+        with self.assertRaises(TypeError):
+            pack_samples(['not bytes'])
+
+
+class TestUnpackSamples(unittest.TestCase):
+    """Test cases for unpack_samples function (BEP 51)."""
+
+    def test_unpack_samples_empty(self):
+        """Test unpacking empty data returns empty list."""
+        from protocol import unpack_samples
+
+        result = unpack_samples(b'')
+        self.assertEqual(result, [])
+        self.assertIsInstance(result, list)
+
+    def test_unpack_samples_single(self):
+        """Test unpacking single sample."""
+        from protocol import unpack_samples
+
+        data = b'A' * 20
+        result = unpack_samples(data)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], data)
+
+    def test_unpack_samples_multiple(self):
+        """Test unpacking multiple samples."""
+        from protocol import unpack_samples
+
+        hash1 = b'A' * 20
+        hash2 = b'B' * 20
+        hash3 = b'C' * 20
+        data = hash1 + hash2 + hash3
+
+        result = unpack_samples(data)
+
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0], hash1)
+        self.assertEqual(result[1], hash2)
+        self.assertEqual(result[2], hash3)
+
+    def test_unpack_samples_invalid_length(self):
+        """Test that non-multiple-of-20 length raises ValueError."""
+        from protocol import unpack_samples
+
+        # 25 bytes (not a multiple of 20)
+        invalid_data = b'A' * 25
+
+        with self.assertRaises(ValueError) as ctx:
+            unpack_samples(invalid_data)
+        self.assertIn("multiple of 20", str(ctx.exception))
+
+    def test_unpack_samples_invalid_type(self):
+        """Test that non-bytes data raises TypeError."""
+        from protocol import unpack_samples
+
+        with self.assertRaises(TypeError):
+            unpack_samples('not bytes')
+
+    def test_pack_unpack_roundtrip(self):
+        """Test that pack/unpack roundtrip preserves data."""
+        from protocol import pack_samples, unpack_samples
+
+        original_hashes = [b'A' * 20, b'B' * 20, b'C' * 20, b'D' * 20]
+
+        packed = pack_samples(original_hashes)
+        unpacked = unpack_samples(packed)
+
+        self.assertEqual(unpacked, original_hashes)
+
+
 if __name__ == '__main__':
     # Run tests with verbose output
     unittest.main(verbosity=2)

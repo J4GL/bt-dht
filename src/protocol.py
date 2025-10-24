@@ -288,6 +288,69 @@ def unpack_nodes(data: bytes) -> List[Tuple[bytes, str, int]]:
     return nodes
 
 
+def pack_samples(info_hashes: list) -> bytes:
+    """
+    Pack info_hash samples into compact format for BEP 51.
+
+    Args:
+        info_hashes: List of 20-byte info_hashes
+
+    Returns:
+        bytes: Concatenated info_hashes (max 20 samples, 400 bytes)
+
+    Raises:
+        TypeError: If info_hashes is not a list or contains non-bytes
+        ValueError: If any info_hash is not exactly 20 bytes
+    """
+    if not isinstance(info_hashes, list):
+        raise TypeError(f"info_hashes must be a list, got {type(info_hashes).__name__}")
+
+    # Limit to max 20 samples per BEP 51 spec
+    samples_to_pack = info_hashes[:20]
+
+    result = b''
+    for info_hash in samples_to_pack:
+        if not isinstance(info_hash, bytes):
+            raise TypeError(f"info_hash must be bytes, got {type(info_hash).__name__}")
+
+        if len(info_hash) != 20:
+            raise ValueError(f"info_hash must be exactly 20 bytes, got {len(info_hash)}")
+
+        result += info_hash
+
+    return result
+
+
+def unpack_samples(data: bytes) -> list:
+    """
+    Unpack info_hash samples from compact format (BEP 51).
+
+    Args:
+        data: Concatenated 20-byte info_hashes
+
+    Returns:
+        list: List of 20-byte info_hashes
+
+    Raises:
+        TypeError: If data is not bytes
+        ValueError: If data length is not a multiple of 20
+    """
+    if not isinstance(data, bytes):
+        raise TypeError(f"data must be bytes, got {type(data).__name__}")
+
+    if len(data) % 20 != 0:
+        raise ValueError(f"data length must be a multiple of 20 bytes, got {len(data)}")
+
+    if len(data) == 0:
+        return []
+
+    samples = []
+    for i in range(0, len(data), 20):
+        samples.append(data[i:i+20])
+
+    return samples
+
+
 def parse_message(data: bytes) -> Dict[bytes, Any]:
     """
     Parse a DHT message from bencode-encoded bytes.
