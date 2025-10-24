@@ -1,0 +1,57 @@
+original_prompt: "Make a cli bittorent dht scraper in python without using external libraries for educational purpose, document every functions"
+
+optimized_prompt: |
+  Create a comprehensive CLI BitTorrent DHT (Distributed Hash Table) scraper in Python using only the standard library for educational purposes.
+
+  Requirements:
+  1. Implementation Details:
+     - Implement the Kademlia DHT protocol (BEP 5) used by BitTorrent
+     - Support both IPv4 and IPv6 where possible
+     - Implement proper node discovery and routing table management
+     - Support DHT operations: ping, find_node, get_peers, announce_peer
+     - Implement bencode encoding/decoding (used by BitTorrent protocol)
+     - Use UDP sockets for DHT communication
+     - No external libraries - only Python standard library (socket, struct, hashlib, etc.)
+
+  2. Security Considerations:
+     - Input validation for all network data (prevent injection attacks)
+     - Rate limiting to prevent DoS
+     - Proper error handling for malformed packets
+     - Validate node IDs and info hashes
+     - Handle malicious nodes gracefully
+     - No arbitrary code execution risks
+
+  3. Documentation Requirements:
+     - Comprehensive docstrings for every function following Google/NumPy style
+     - Explain the DHT protocol concepts in comments
+     - Document the bencode format
+     - Include usage examples
+     - Add inline comments for complex logic
+
+  4. Testing Requirements:
+     - Minimum 2 unit tests per function (happy path + error handling)
+     - Test bencode encoding/decoding thoroughly
+     - Test DHT message parsing and generation
+     - Test routing table operations
+     - End-to-end test for the complete CLI workflow
+
+  5. CLI Features:
+     - Start DHT node and bootstrap from known nodes
+     - Search for peers for a given info hash
+     - Display discovered peers and nodes
+     - Option to specify bootstrap nodes
+     - Verbose mode for debugging
+     - Clean shutdown handling
+
+  6. Code Quality:
+     - Follow PEP 8 style guidelines
+     - Type hints where appropriate
+     - Modular design with clear separation of concerns
+     - Error handling for all network operations
+     - Proper resource cleanup (socket closing)
+
+  7. Educational Value:
+     - Clear explanation of BitTorrent DHT concepts
+     - Comments explaining the Kademlia algorithm
+     - Reference to relevant BEPs (BitTorrent Enhancement Proposals)
+     - Demonstrate proper network programming practices
