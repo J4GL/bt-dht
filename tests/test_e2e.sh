@@ -183,7 +183,7 @@ for test_file in "${TEST_FILES[@]}"; do
 done
 
 if ! $UNIT_TEST_FAILED; then
-    pass "All unit tests pass (188 tests)"
+    pass "All unit tests pass (194 tests)"
 else
     fail "Some unit tests failed"
 fi

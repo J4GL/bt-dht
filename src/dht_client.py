@@ -516,7 +516,7 @@ class DHTClient:
         except:
             pass
 
-    def crawl_network(self, duration: float = 60.0, callback: Callable = None, progress_callback: Callable = None):
+    def crawl_network(self, duration: float = 60.0, callback: Callable = None, progress_callback: Callable = None, query_interval: int = 3):
         """
         Crawl the DHT network to discover info_hashes.
 
@@ -527,14 +527,26 @@ class DHTClient:
             duration: How long to crawl (seconds, 0 = infinite)
             callback: Optional callback(info_hash, addr) for each discovery
             progress_callback: Optional callback() called every iteration for progress updates
+            query_interval: Interval in seconds between active queries (default: 3, min: 1)
 
         Returns:
             Dict mapping info_hash to metadata
+
+        Raises:
+            ValueError: If query_interval is not a positive integer >= 1
+            TypeError: If query_interval is not an integer
         """
+        # Validate query_interval
+        if not isinstance(query_interval, int):
+            raise TypeError(f"query_interval must be an integer, got {type(query_interval).__name__}")
+
+        if query_interval < 1:
+            raise ValueError("query_interval must be a positive integer >= 1")
+
         if not self.running:
             raise RuntimeError("DHT client not running")
 
-        print(f"[DHT] Starting crawler mode (duration: {duration}s)...")
+        print(f"[DHT] Starting crawler mode (duration: {duration}s, query interval: {query_interval}s)...")
 
         self.info_hash_callback = callback
         start_time = time.time()
@@ -544,7 +556,7 @@ class DHTClient:
         while (duration == 0 or (time.time() - start_time) < duration):
             try:
                 # Query random nodes to stay active in DHT
-                if query_count % 10 == 0:  # Every 10 iterations
+                if query_count % query_interval == 0:  # Every query_interval iterations
                     # Get some nodes from routing table
                     all_nodes = []
                     for bucket in self.routing_table.buckets:

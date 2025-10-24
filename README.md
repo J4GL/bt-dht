@@ -88,6 +88,10 @@ chmod +x scraper.py
 
 # INFINITE CRAWL - Run until you stop it (Ctrl+C)
 ./scraper.py --timeout 0
+
+# Adjust active query interval for more/less DHT visibility
+./scraper.py --timeout 0 --query-interval 1   # Aggressive (max visibility)
+./scraper.py --timeout 0 --query-interval 10  # Conservative (low traffic)
 ```
 
 **What happens:**
@@ -95,6 +99,7 @@ chmod +x scraper.py
 - Listens for get_peers queries from other clients
 - Discovers info_hashes as they're being searched
 - Shows real-time discoveries + summary
+- Progress updates every second (in INFINITE mode)
 
 **Example output:**
 ```
@@ -158,21 +163,22 @@ This demonstrates:
 ### Running Tests
 
 ```bash
-# Run all unit tests (167 total)
+# Run all unit tests (194 total)
 python tests/test_bencode.py        # 43 tests
 python tests/test_node.py           # 35 tests
 python tests/test_routing_table.py  # 34 tests
 python tests/test_protocol.py       # 36 tests
-python tests/test_dht_client.py     # 19 tests
+python tests/test_dht_client.py     # 25 tests
+python tests/test_progress_display.py  # 21 tests
 
-# Run end-to-end tests (12 tests)
+# Run end-to-end tests (13 tests)
 bash tests/test_e2e.sh
 ```
 
 **Test Coverage:**
-- **167 unit tests** - Test individual functions
-- **12 end-to-end tests** - Test complete CLI workflows
-- **Total: 179 tests** - All passing ✓
+- **194 unit tests** - Test individual functions
+- **13 end-to-end tests** - Test complete CLI workflows
+- **Total: 207 tests** - All passing ✓
 
 ## Usage Examples
 

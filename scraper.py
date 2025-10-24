@@ -100,8 +100,11 @@ Examples:
   # Advanced options
   %(prog)s --port 6881
   %(prog)s --bootstrap router.bittorrent.com:6881
+  %(prog)s --timeout 0 --query-interval 1    # Aggressive crawling (max visibility)
+  %(prog)s --timeout 0 --query-interval 10   # Conservative crawling (low traffic)
 
 Note: Use --timeout 0 for infinite crawling. Press Ctrl+C to stop.
+      Lower --query-interval = more DHT visibility but more network traffic.
         """
     )
 
@@ -135,6 +138,14 @@ Note: Use --timeout 0 for infinite crawling. Press Ctrl+C to stop.
         '--verbose',
         action='store_true',
         help='Verbose output'
+    )
+
+    parser.add_argument(
+        '--query-interval',
+        type=int,
+        default=3,
+        help='Active query interval in seconds for crawler mode (default: 3, min: 1). '
+             'Lower values = more DHT visibility but more network traffic.'
     )
 
     args = parser.parse_args()
@@ -262,7 +273,8 @@ Note: Use --timeout 0 for infinite crawling. Press Ctrl+C to stop.
                 results = client.crawl_network(
                     duration=args.timeout,
                     callback=on_discovery,
-                    progress_callback=on_progress if infinite_mode else None
+                    progress_callback=on_progress if infinite_mode else None,
+                    query_interval=args.query_interval
                 )
                 # Clear the progress line before showing final results
                 if infinite_mode:
