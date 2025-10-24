@@ -223,11 +223,9 @@ Note: Use --timeout 0 for infinite crawling. Press Ctrl+C to stop.
 
             discovered_count = 0
             total_requests = 0
-            last_progress_update = 0.0
-            progress_update_interval = 1.0  # Update progress every 1 second
 
             def on_discovery(info_hash, addr):
-                nonlocal discovered_count, total_requests, last_progress_update
+                nonlocal discovered_count, total_requests
                 total_requests += 1
 
                 # Check if this is a new unique info_hash
@@ -236,31 +234,36 @@ Note: Use --timeout 0 for infinite crawling. Press Ctrl+C to stop.
 
                 if is_new:
                     discovered_count += 1
+                    # Clear progress line before printing discovery
+                    if infinite_mode:
+                        print(clear_progress_line(), end='')
                     print(f"[{discovered_count:4d}] {info_hash.hex()}  (from {addr[0]})")
 
-                # Update progress line for INFINITE mode
+            def on_progress():
+                """Called every second to update progress display (INFINITE mode only)."""
                 if infinite_mode:
-                    current_time = time.time()
-                    if current_time - last_progress_update >= progress_update_interval:
-                        elapsed = current_time - start_time
-                        rate = calculate_rate(discovered_count, elapsed)
-                        table_size = sum(len(bucket) for bucket in client.routing_table.buckets)
+                    elapsed = time.time() - start_time
+                    rate = calculate_rate(discovered_count, elapsed)
+                    table_size = sum(len(bucket) for bucket in client.routing_table.buckets)
 
-                        # Clear previous progress line and print new one
-                        progress = format_progress_line(
-                            elapsed=elapsed,
-                            count=discovered_count,
-                            rate=rate,
-                            total_requests=total_requests,
-                            table_size=table_size
-                        )
-                        print(clear_progress_line() + progress, end='', flush=True)
-                        last_progress_update = current_time
+                    # Format and display progress line
+                    progress = format_progress_line(
+                        elapsed=elapsed,
+                        count=discovered_count,
+                        rate=rate,
+                        total_requests=total_requests,
+                        table_size=table_size
+                    )
+                    print(clear_progress_line() + progress, end='', flush=True)
 
             start_time = time.time()
 
             try:
-                results = client.crawl_network(duration=args.timeout, callback=on_discovery)
+                results = client.crawl_network(
+                    duration=args.timeout,
+                    callback=on_discovery,
+                    progress_callback=on_progress if infinite_mode else None
+                )
                 # Clear the progress line before showing final results
                 if infinite_mode:
                     print()  # New line after progress

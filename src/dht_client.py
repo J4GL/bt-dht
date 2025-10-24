@@ -516,7 +516,7 @@ class DHTClient:
         except:
             pass
 
-    def crawl_network(self, duration: float = 60.0, callback: Callable = None):
+    def crawl_network(self, duration: float = 60.0, callback: Callable = None, progress_callback: Callable = None):
         """
         Crawl the DHT network to discover info_hashes.
 
@@ -526,6 +526,7 @@ class DHTClient:
         Args:
             duration: How long to crawl (seconds, 0 = infinite)
             callback: Optional callback(info_hash, addr) for each discovery
+            progress_callback: Optional callback() called every iteration for progress updates
 
         Returns:
             Dict mapping info_hash to metadata
@@ -562,6 +563,11 @@ class DHTClient:
                             self._send_find_node(node.ip, node.port, random_target, dummy_callback)
 
                 query_count += 1
+
+                # Call progress callback if provided
+                if progress_callback:
+                    progress_callback()
+
                 time.sleep(1.0)  # Check every second
 
                 # Clean up old queries
