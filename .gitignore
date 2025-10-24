@@ -40,3 +40,7 @@ htmlcov/
 
 # Logs
 *.log
+
+# Development artifacts (local only)
+prompts/
+MEMORY/
