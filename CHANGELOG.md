@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Demo 6 in dht_demo.py: BEP 51 sample packing/unpacking demonstration
+
 ## [0.4.0] - 2025-10-24
 
 ### Added

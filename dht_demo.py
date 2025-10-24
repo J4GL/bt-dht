@@ -26,7 +26,9 @@ from protocol import (
     create_get_peers_query,
     parse_message,
     pack_nodes,
-    unpack_nodes
+    unpack_nodes,
+    pack_samples,
+    unpack_samples
 )
 
 
@@ -230,6 +232,65 @@ def demo_simulated_lookup():
     print("\n✓ Simulation complete!\n")
 
 
+def demo_bep51_samples():
+    """Demonstrate BEP 51 DHT Infohash Indexing (sample exchange)."""
+    print("=" * 60)
+    print("DEMO 6: BEP 51 DHT Infohash Indexing")
+    print("=" * 60)
+
+    print("\nBEP 51 allows DHT nodes to exchange info_hash samples.")
+    print("Nodes advertise indexing by including 'samples' in responses.")
+    print("This enables faster info_hash discovery.\n")
+
+    # Step 1: Create sample info_hashes
+    print("1. Creating sample info_hashes:")
+    samples = []
+    for i in range(5):
+        # Generate realistic-looking info_hashes
+        info_hash = bytes([i * 40 + j for j in range(20)])
+        samples.append(info_hash)
+        print(f"   Sample {i+1}: {info_hash.hex()[:40]}...")
+
+    # Step 2: Pack samples into compact format
+    print("\n2. Packing samples into compact format (BEP 51):")
+    packed = pack_samples(samples)
+    print(f"   Packed size: {len(packed)} bytes (5 samples × 20 bytes)")
+    print(f"   Compact format: {packed[:60].hex()}... ")
+
+    # Step 3: Unpack samples back to list
+    print("\n3. Unpacking samples from binary data:")
+    unpacked = unpack_samples(packed)
+    print(f"   Unpacked: {len(unpacked)} info_hashes")
+    for i, info_hash in enumerate(unpacked[:3], 1):
+        print(f"   Sample {i}: {info_hash.hex()[:40]}...")
+
+    # Step 4: Verify roundtrip
+    print("\n4. Verifying roundtrip integrity:")
+    if samples == unpacked:
+        print("   ✓ Success! Original and unpacked samples match perfectly")
+    else:
+        print("   ✗ Error: Data mismatch")
+
+    # Step 5: Demonstrate 20 sample limit
+    print("\n5. Demonstrating 20 sample limit:")
+    many_samples = [generate_node_id() for _ in range(25)]
+    print(f"   Created: {len(many_samples)} info_hashes")
+
+    packed_limited = pack_samples(many_samples)
+    unpacked_limited = unpack_samples(packed_limited)
+    print(f"   Packed: {len(unpacked_limited)} samples (limited to 20)")
+    print(f"   Size: {len(packed_limited)} bytes (20 × 20 = 400 bytes max)")
+
+    # Step 6: Real-world usage
+    print("\n6. Real-world usage:")
+    print("   - DHT nodes include 'samples' field in find_node responses")
+    print("   - DHT nodes include 'samples' field in get_peers responses")
+    print("   - Receiving nodes discover new info_hashes from samples")
+    print("   - Crawler mode uses BEP 51 for faster discovery")
+
+    print("\n✓ BEP 51 demonstration complete!\n")
+
+
 def main():
     """Run all demonstrations."""
     print("\n")
@@ -245,6 +306,7 @@ def main():
         demo_routing_table,
         demo_protocol,
         demo_simulated_lookup,
+        demo_bep51_samples,
     ]
 
     for demo in demos:
